@@ -1,4 +1,4 @@
-<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="theme-color" content="#000"><title>CAN Diagnostic V5.3 · Meta Display</title>
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="theme-color" content="#000"><title>CAN Diagnostic V5.4 · Meta Display</title>
 <style>
 :root{color-scheme:dark;background:#000;color:#f7fafc;font:15px system-ui,-apple-system,sans-serif}*{box-sizing:border-box}body{margin:0;background:#000}
 main{max-width:600px;min-height:min(100dvh,600px);margin:auto;padding:23px;display:flex;flex-direction:column;gap:15px}header{display:flex;justify-content:space-between;gap:10px;align-items:center}h1{margin:0;color:#56d8ff;font-size:23px}.sub{color:#adc4d4;font-size:13px}.tag{border:1px solid #416477;border-radius:18px;padding:7px 9px;font-size:12px;white-space:nowrap}.tag.live{color:#87f5c1;border-color:#159669}.tag.warn{color:#ffcf83;border-color:#bf7c18}
@@ -9,7 +9,7 @@ main{max-width:600px;min-height:min(100dvh,600px);margin:auto;padding:23px;displ
 <section class="pair" id="pair"><h2>Pair these glasses</h2><div class="code" id="pairCode">------</div><div class="help">On your laptop open:<br><strong>bell-pepper.github.io/can-diagnostic-glasses/pair.html</strong><br>Enter this code to approve the glasses.</div><div class="actions"><button id="retry">New code</button></div><div class="help" id="expiry" style="margin-top:12px">Code expires in 5 minutes</div></section>
 <section class="grid" id="widgets"></section>
 <div class="actions" id="pairedControls" style="display:none"><button id="unpair">Unpair these glasses</button></div>
-<footer><span id="bus">—</span><span id="age">No fresh data</span></footer>
+<footer><span id="bus">—</span><span id="age">No fresh data</span><span>V5.4 · 1s poll</span></footer>
 </main><script>
 'use strict';
 const API='https://fancy-heart-ab8a.farmbotix.workers.dev';
