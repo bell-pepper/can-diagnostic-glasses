@@ -1,91 +1,47 @@
-<!DOCTYPE html>
-<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="theme-color" content="#000000"><title>CAN Diagnostic Live · Meta Display</title>
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="theme-color" content="#000"><title>CAN Diagnostic V5.3 · Meta Display</title>
 <style>
-:root{color-scheme:dark;font-family:system-ui,-apple-system,Segoe UI,Arial,sans-serif;background:#000;color:#fff}
-*{box-sizing:border-box}body{margin:0;background:#000}button,input{font:inherit}button{cursor:pointer}
-.app{max-width:600px;margin:0 auto;min-height:min(100dvh,600px);padding:24px;display:flex;flex-direction:column;gap:12px}
-header{display:flex;align-items:center;justify-content:space-between;gap:12px}
-h1{margin:0;font-size:23px;color:#64dcff;letter-spacing:.2px}.sub{font-size:13px;color:#a7c1ce;margin-top:2px}
-.stat{font-size:13px;border:1px solid #475569;padding:7px 10px;border-radius:18px;white-space:nowrap;color:#cbd5e1}
-.stat.live{border-color:#059669;color:#72e4b2}.stat.bad{border-color:#b45309;color:#ffc487}
-.controls{display:flex;justify-content:space-between;align-items:center;gap:8px}.tiny{font-size:12px;color:#94a3b8}.controls button,.config button{border:1px solid #30566c;background:#112838;color:#e2f5ff;padding:7px 13px;border-radius:10px}
-.grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;flex:1;align-content:start}
-.widget{background:#0b1821;border:1px solid #29495b;border-radius:14px;padding:13px;min-height:95px;display:flex;flex-direction:column;gap:4px}
-.widget .name{font-size:13px;min-height:17px;color:#a9c5d6;overflow-wrap:anywhere}
-.widget .value{font-size:29px;font-weight:750;letter-spacing:.15px;font-variant-numeric:tabular-nums;line-height:1.17}
-.widget .unit{font-size:12px;color:#53d4ff}.widget.stale .value{color:#728492}
-footer{border-top:1px solid #253f4d;padding-top:9px;display:flex;justify-content:space-between;gap:12px;color:#93b5c4;font-size:12px}
-.config{border:1px solid #365365;border-radius:13px;background:#0e1d28;padding:15px;display:none;flex-direction:column;gap:9px}.config.open{display:flex}
-.config label{font-size:13px;color:#b6d3e1}.config input{width:100%;padding:10px;background:#06121a;color:#fff;border:1px solid #3d5969;border-radius:8px}
-.config p{color:#aac4d1;font-size:12px;margin:0}.config .actions{display:flex;gap:10px}.config button.primary{background:#0369a1;border-color:#38bdf8}
-.message{border:1px dashed #36566a;border-radius:12px;padding:18px;color:#b5d0de;font-size:14px;line-height:1.5;grid-column:1/-1}
-@media(max-width:400px){.app{padding:17px}.widget .value{font-size:24px}}
-</style></head><body>
-<div class="app">
-<header><div><h1 id="title">CAN DIAGNOSTIC</h1><div class="sub" id="subtitle">Live machine profile · read only</div></div><div class="stat" id="state" role="status">Not configured</div></header>
-<div class="controls"><span class="tiny" id="connection">No relay connected</span><button id="configBtn" aria-label="Open connection settings">Connection ⚙</button></div>
-<div id="config" class="config">
-  <label>Relay HTTPS URL <input id="relay" spellcheck="false" placeholder="https://can-diagnostic-relay.YOU.workers.dev"></label>
-  <label>Viewer key (separate from ESP32 ingest key) <input id="viewKey" type="password" autocomplete="off" placeholder="32+ character viewer token"></label>
-  <label>Device ID <input id="device" spellcheck="false" value="bench-1"></label>
-  <div class="actions"><button id="save" class="primary">Save & connect</button><button id="cancel">Close</button><button id="clearKey">Forget key</button></div>
-  <p>The viewer key is stored only in this device's browser storage. Never put it in public GitHub code or URL parameters.</p>
-</div>
-<main class="grid" id="widgets"><div class="message">Choose Connection, enter the Worker HTTPS address and viewer key, then save. Once the ESP32 begins uploading, selected CAN values appear here.</div></main>
-<footer><span id="bus">—</span><span id="age">No fresh CAN data</span></footer>
-</div>
-<script>
+:root{color-scheme:dark;background:#000;color:#f7fafc;font:15px system-ui,-apple-system,sans-serif}*{box-sizing:border-box}body{margin:0;background:#000}
+main{max-width:600px;min-height:min(100dvh,600px);margin:auto;padding:23px;display:flex;flex-direction:column;gap:15px}header{display:flex;justify-content:space-between;gap:10px;align-items:center}h1{margin:0;color:#56d8ff;font-size:23px}.sub{color:#adc4d4;font-size:13px}.tag{border:1px solid #416477;border-radius:18px;padding:7px 9px;font-size:12px;white-space:nowrap}.tag.live{color:#87f5c1;border-color:#159669}.tag.warn{color:#ffcf83;border-color:#bf7c18}
+.msg{color:#a7c6d8;font-size:13px}.pair{border:1px solid #2d536a;border-radius:17px;padding:23px 15px;text-align:center;background:#0a1c26;display:none}.pair.on{display:block}.pair h2{font-size:17px;font-weight:600;margin:0 0 12px}.code{font-size:52px;letter-spacing:9px;font-weight:800;color:#70ddff;font-variant-numeric:tabular-nums;margin:8px 0}.help{font-size:13px;color:#aec9d7;line-height:1.5}.help strong{color:#fff}button{background:#103245;color:#e9f8ff;border:1px solid #44778f;border-radius:9px;padding:10px 15px;font:inherit;cursor:pointer}.actions{display:flex;gap:8px;justify-content:center;flex-wrap:wrap;margin-top:16px}.grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;flex:1;align-content:start}.widget{background:#0d1d27;border:1px solid #34566a;border-radius:12px;padding:12px;min-height:97px}.widget .name{font-size:12px;color:#b4cedb;overflow-wrap:anywhere}.widget .value{font-size:30px;font-weight:750;margin-top:5px}.widget .unit{font-size:12px;color:#6ee0ff}.widget.old .value{color:#7b94a1}.note{grid-column:1/-1;border:1px dashed #33566a;border-radius:12px;padding:16px;line-height:1.6;color:#b4cbda}footer{border-top:1px solid #234050;padding-top:9px;font-size:12px;color:#91b3c4;display:flex;justify-content:space-between;gap:8px}@media(max-width:420px){main{padding:15px}.code{font-size:42px}.widget .value{font-size:24px}}
+</style></head><body><main>
+<header><div><h1 id="title">CAN DIAGNOSTIC</h1><div class="sub">Read-only machine dashboard</div></div><span class="tag" id="status">Starting</span></header>
+<div id="message" class="msg">Connecting to relay…</div>
+<section class="pair" id="pair"><h2>Pair these glasses</h2><div class="code" id="pairCode">------</div><div class="help">On your laptop open:<br><strong>bell-pepper.github.io/can-diagnostic-glasses/pair.html</strong><br>Enter this code to approve the glasses.</div><div class="actions"><button id="retry">New code</button></div><div class="help" id="expiry" style="margin-top:12px">Code expires in 5 minutes</div></section>
+<section class="grid" id="widgets"></section>
+<div class="actions" id="pairedControls" style="display:none"><button id="unpair">Unpair these glasses</button></div>
+<footer><span id="bus">—</span><span id="age">No fresh data</span></footer>
+</main><script>
 'use strict';
-const $=id=>document.getElementById(id);
-const SETTINGS_KEY='canDiagLiveRelayV3';
-let cfg={},working=false,lastReceivedAt=0,lastValues=null,lastNetworkOK=false,manualOpen=false;
-try{cfg=JSON.parse(localStorage.getItem(SETTINGS_KEY)||'{}')}catch{cfg={}}
-function state(t,level=''){$('state').textContent=t;$('state').className='stat '+level}
-function configure(open){manualOpen=open;$('config').classList.toggle('open',open);if(open){$('relay').value=cfg.relay||'';$('viewKey').value=cfg.key||'';$('device').value=cfg.device||'bench-1'}}
-$('configBtn').onclick=()=>configure(!manualOpen);
-$('cancel').onclick=()=>configure(false);
-$('save').onclick=()=>{const relay=$('relay').value.trim().replace(/\/+$/,'');const key=$('viewKey').value.trim(),device=$('device').value.trim();
- if(!/^https:\/\/[a-z\d.-]+(?::\d+)?$/i.test(relay)){alert('Enter an HTTPS relay origin without a path');return}
- if(key.length<32){alert('Viewer key must be 32 characters or longer');return}
- if(!/^[A-Za-z0-9_-]{1,40}$/.test(device)){alert('Invalid device ID');return}
- cfg={relay,key,device};localStorage.setItem(SETTINGS_KEY,JSON.stringify(cfg));configure(false);lastReceivedAt=0;load()};
-$('clearKey').onclick=()=>{localStorage.removeItem(SETTINGS_KEY);cfg={};lastValues=null;configure(false);state('Not configured');$('widgets').innerHTML='<div class="message">Viewer key forgotten. Reconfigure the connection to continue.</div>'};
-function render(data,receivedAt){
- $('title').textContent=String(data.profile||'CAN DIAGNOSTIC').slice(0,28);
- $('subtitle').textContent='Live CAN diagnostics · read only';
- $('bus').textContent=(data.bitrate||'—')+' kbps · '+Number(data.totalFrames||0).toLocaleString()+' frames';
- const widgets=$('widgets');widgets.replaceChildren();
- if(!Array.isArray(data.widgets)||!data.widgets.length){widgets.innerHTML='<div class="message">No signals selected. Open Profiles on the ESP32 web app, select signals, and press Sync selected signals to ESP32.</div>';return}
- for(const w of data.widgets){const card=document.createElement('div');card.className='widget';
- const name=document.createElement('div');name.className='name';name.textContent=String(w.name||'Signal').replace(/_/g,' ');
- const value=document.createElement('div');value.className='value';
- const fresh=w.value!==null && typeof w.value==='number' && Number.isFinite(w.value) && Number(w.ageMs)<=3000;
- value.textContent=fresh?Number(w.value.toPrecision(6)).toLocaleString():'—';
- if(!fresh) card.classList.add('stale');
- const unit=document.createElement('div');unit.className='unit';unit.textContent=String(w.unit||'');
- card.append(name,value,unit);widgets.append(card)}
-}
-function updateAge(){if(!lastReceivedAt){$('age').textContent='No fresh CAN data';return}
- const age=Math.max(0,Date.now()-lastReceivedAt);$('age').textContent='Relay update '+Math.round(age/1000)+'s ago';
- if(age>5000){state('Stale data','bad');$('connection').textContent='Waiting for new readings';
-  document.querySelectorAll('.widget .value').forEach(e=>e.textContent='—')}
- else if(lastNetworkOK)state('● LIVE','live')}
-async function load(){if(working||!cfg.relay||!cfg.key)return;working=true;
- try{const controller=new AbortController();const abort=setTimeout(()=>controller.abort(),5000);
- let response;
- try{response=await fetch(cfg.relay+'/api/latest?device='+encodeURIComponent(cfg.device||'bench-1'),
- {headers:{'X-Viewer-Key':cfg.key},cache:'no-store',signal:controller.signal})}
- finally{clearTimeout(abort)}
- if(response.status===401){state('Key rejected','bad');$('connection').textContent='Check viewer key';return}
- if(!response.ok)throw Error('HTTP '+response.status);
- const result=await response.json();lastNetworkOK=true;
- if(!result.data){state('Waiting for ESP32','bad');$('connection').textContent='Relay reachable';$('age').textContent='No uploaded readings';return}
- if(result.receivedAt!==lastReceivedAt){lastReceivedAt=result.receivedAt;lastValues=result.data;render(result.data,result.receivedAt)}
- $('connection').textContent='Connected to relay';updateAge();
- }catch(err){lastNetworkOK=false;state('Disconnected','bad');$('connection').textContent=String(err.message).slice(0,42);updateAge()}
- finally{working=false}}
-window.addEventListener('keydown',e=>{if(e.target.tagName==='INPUT')return;if(e.key==='Enter'){configure(!manualOpen);e.preventDefault()}else if(e.key==='ArrowRight'){load();e.preventDefault()}});
-if(cfg.relay&&cfg.key)load();else configure(true);
-setInterval(load,1000);setInterval(updateAge,500);
+const API='https://fancy-heart-ab8a.farmbotix.workers.dev';
+const STORE='canDiagV53Paired';const PENDING='canDiagV53Pending';const $=id=>document.getElementById(id);
+let paired=null,pending=null,busy=false,lastAt=0,lastData=null,interval=0;
+function get(key){try{return JSON.parse(localStorage.getItem(key)||'null')}catch{return null}}
+function put(key,val){localStorage.setItem(key,JSON.stringify(val))}
+function status(t,level=''){$('status').textContent=t;$('status').className='tag '+level}
+function clear(){localStorage.removeItem(STORE);localStorage.removeItem(PENDING);paired=null;pending=null;lastData=null;lastAt=0}
+function showPair(){ $('pair').classList.add('on');$('widgets').replaceChildren();$('pairedControls').style.display='none';$('title').textContent='CAN DIAGNOSTIC';}
+async function startPair(){if(busy)return;busy=true;showPair();status('Pairing');$('message').textContent='Requesting pairing code';
+ try{const r=await fetch(API+'/api/pair/start',{method:'POST',headers:{'Content-Type':'application/json'},body:'{}',cache:'no-store'});const j=await r.json();if(!r.ok)throw Error(j.error||'HTTP '+r.status);pending=j;put(PENDING,j);$('pairCode').textContent=j.code;$('message').textContent='Enter this code on the laptop';}catch(e){status('Offline','warn');$('message').textContent='Pairing unavailable: '+e.message;$('pairCode').textContent='------'}finally{busy=false}}
+async function checkPair(){if(!pending||busy)return;if(Date.now()>=pending.expiresAt){pending=null;localStorage.removeItem(PENDING);startPair();return}busy=true;
+ try{const r=await fetch(API+'/api/pair/check',{method:'POST',headers:{'Content-Type':'application/json','X-Pair-Secret':pending.secret},body:JSON.stringify({id:pending.id}),cache:'no-store'});const j=await r.json();if(!r.ok)throw Error(j.error||'HTTP '+r.status);
+ if(j.status==='paired'){paired={token:j.token,device:j.device,expiresAt:j.expiresAt};put(STORE,paired);localStorage.removeItem(PENDING);pending=null;$('pair').classList.remove('on');$('pairedControls').style.display='flex';status('Connected');$('message').textContent='Paired with '+paired.device;}
+ else{$('expiry').textContent='Expires in '+Math.max(0,Math.ceil((pending.expiresAt-Date.now())/1000))+' seconds';}}
+ catch(e){if(/expired|used/i.test(e.message)){pending=null;localStorage.removeItem(PENDING);startPair()}else $('message').textContent='Waiting for approval: '+e.message}
+ finally{busy=false}}
+function draw(d){$('title').textContent=(d.profile||'CAN DIAGNOSTIC').slice(0,28);$('bus').textContent=d.bitrate+' kbps';$('widgets').replaceChildren();
+ if(!d.widgets?.length){$('widgets').innerHTML='<div class="note">No signals selected. Sync a dashboard from Profiles on the ESP32 web interface.</div>';return}
+ for(const w of d.widgets){const e=document.createElement('div');e.className='widget';const valid=typeof w.value==='number'&&Number.isFinite(w.value)&&w.ageMs!=null&&w.ageMs<=3000;if(!valid)e.classList.add('old');
+ const n=document.createElement('div');n.className='name';n.textContent=w.name||'Signal';const v=document.createElement('div');v.className='value';v.textContent=valid?Number(w.value.toPrecision(6)).toLocaleString():'—';const u=document.createElement('div');u.className='unit';u.textContent=w.unit||'';e.append(n,v,u);$('widgets').append(e)}}
+async function fetchLive(){if(!paired||busy)return;if(Date.now()>paired.expiresAt){clear();startPair();return}busy=true;
+ try{const c=new AbortController(),timer=setTimeout(()=>c.abort(),6000);let r;try{r=await fetch(API+'/api/latest?device='+encodeURIComponent(paired.device),{headers:{'X-Pair-Token':paired.token},signal:c.signal,cache:'no-store'})}finally{clearTimeout(timer)}
+ if(r.status===401){clear();startPair();return}if(!r.ok)throw Error('HTTP '+r.status);const j=await r.json();
+ if(!j.data){status('Waiting for ESP32','warn');$('message').textContent='Pairing works. No uploaded CAN readings yet.';return}
+ if(j.receivedAt!==lastAt){lastAt=j.receivedAt;lastData=j.data;draw(j.data)}$('message').textContent='Cloudflare relay connected';updateAge();}
+ catch(e){status('Connection error','warn');$('message').textContent=e.message}finally{busy=false}}
+function updateAge(){if(!lastAt){$('age').textContent='No fresh CAN data';return}const sec=Math.max(0,Math.floor((Date.now()-lastAt)/1000));$('age').textContent='Last update '+sec+'s ago';if(sec>5){status('Stale data','warn');for(const e of document.querySelectorAll('.widget .value'))e.textContent='—'}else status('● LIVE','live')}
+$('retry').onclick=()=>{pending=null;localStorage.removeItem(PENDING);startPair()};$('unpair').onclick=()=>{if(confirm('Forget pairing on these glasses?')){clear();startPair()}};
+paired=get(STORE);pending=get(PENDING);if(paired){$('pairedControls').style.display='flex';status('Connecting');$('message').textContent='Restoring saved pairing';fetchLive()}else if(pending&&pending.expiresAt>Date.now()){$('pairCode').textContent=pending.code;showPair();status('Pairing');$('message').textContent='Enter this code on your laptop'}else startPair();
+setInterval(()=>{if(document.visibilityState==='hidden')return;if(paired)fetchLive();else if(pending)checkPair();},3000);setInterval(updateAge,1000);
 </script></body></html>
+
 
