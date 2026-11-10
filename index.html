@@ -1,34 +1,39 @@
-<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="theme-color" content="#000"><title>CAN Diagnostic V5.4 · Meta Display</title>
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="theme-color" content="#000"><title>CAN Diagnostic V5.5 · Meta Display</title>
 <style>
 :root{color-scheme:dark;background:#000;color:#f7fafc;font:15px system-ui,-apple-system,sans-serif}*{box-sizing:border-box}body{margin:0;background:#000}
 main{max-width:600px;min-height:min(100dvh,600px);margin:auto;padding:23px;display:flex;flex-direction:column;gap:15px}header{display:flex;justify-content:space-between;gap:10px;align-items:center}h1{margin:0;color:#56d8ff;font-size:23px}.sub{color:#adc4d4;font-size:13px}.tag{border:1px solid #416477;border-radius:18px;padding:7px 9px;font-size:12px;white-space:nowrap}.tag.live{color:#87f5c1;border-color:#159669}.tag.warn{color:#ffcf83;border-color:#bf7c18}
 .msg{color:#a7c6d8;font-size:13px}.pair{border:1px solid #2d536a;border-radius:17px;padding:23px 15px;text-align:center;background:#0a1c26;display:none}.pair.on{display:block}.pair h2{font-size:17px;font-weight:600;margin:0 0 12px}.code{font-size:52px;letter-spacing:9px;font-weight:800;color:#70ddff;font-variant-numeric:tabular-nums;margin:8px 0}.help{font-size:13px;color:#aec9d7;line-height:1.5}.help strong{color:#fff}button{background:#103245;color:#e9f8ff;border:1px solid #44778f;border-radius:9px;padding:10px 15px;font:inherit;cursor:pointer}.actions{display:flex;gap:8px;justify-content:center;flex-wrap:wrap;margin-top:16px}.grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;flex:1;align-content:start}.widget{background:#0d1d27;border:1px solid #34566a;border-radius:12px;padding:12px;min-height:97px}.widget .name{font-size:12px;color:#b4cedb;overflow-wrap:anywhere}.widget .value{font-size:30px;font-weight:750;margin-top:5px}.widget .unit{font-size:12px;color:#6ee0ff}.widget.old .value{color:#7b94a1}.note{grid-column:1/-1;border:1px dashed #33566a;border-radius:12px;padding:16px;line-height:1.6;color:#b4cbda}footer{border-top:1px solid #234050;padding-top:9px;font-size:12px;color:#91b3c4;display:flex;justify-content:space-between;gap:8px}@media(max-width:420px){main{padding:15px}.code{font-size:42px}.widget .value{font-size:24px}}
-</style></head><body><main>
+.modebar{display:flex;gap:7px}.modebar button{flex:1;padding:10px 8px}.modebar button.active{background:#075b92;border-color:#56d8ff;color:#fff}.rawrow{padding:10px 12px;border:1px solid #34566a;border-radius:11px;background:#0d1d27;margin:0 0 8px}.rawid{color:#63dbff;font-weight:750;font:15px ui-monospace,monospace}.rawhex{font:13px ui-monospace,monospace;letter-spacing:.1px;margin-top:7px;white-space:nowrap}.rawsub{font-size:11px;color:#abc7d4;margin-top:5px}.rawstale{opacity:.5}</style></head><body><main>
 <header><div><h1 id="title">CAN DIAGNOSTIC</h1><div class="sub">Read-only machine dashboard</div></div><span class="tag" id="status">Starting</span></header>
 <div id="message" class="msg">Connecting to relay…</div>
 <section class="pair" id="pair"><h2>Pair these glasses</h2><div class="code" id="pairCode">------</div><div class="help">On your laptop open:<br><strong>bell-pepper.github.io/can-diagnostic-glasses/pair.html</strong><br>Enter this code to approve the glasses.</div><div class="actions"><button id="retry">New code</button></div><div class="help" id="expiry" style="margin-top:12px">Code expires in 5 minutes</div></section>
-<section class="grid" id="widgets"></section>
+<div id="modebar" class="modebar" style="display:none"><button id="profileMode" class="active">DBC / Profile</button><button id="rawMode">Raw CAN</button></div>
+<section class="grid" id="widgets"></section><section id="rawRows" style="display:none"></section>
 <div class="actions" id="pairedControls" style="display:none"><button id="unpair">Unpair these glasses</button></div>
-<footer><span id="bus">—</span><span id="age">No fresh data</span><span>V5.4 · 1s poll</span></footer>
+<footer><span id="bus">—</span><span id="age">No fresh data</span><span>V5.5 · 1s poll</span></footer>
 </main><script>
 'use strict';
 const API='https://fancy-heart-ab8a.farmbotix.workers.dev';
 const STORE='canDiagV53Paired';const PENDING='canDiagV53Pending';const $=id=>document.getElementById(id);
-let paired=null,pending=null,busy=false,lastAt=0,lastData=null,interval=0;
+let paired=null,pending=null,busy=false,lastAt=0,lastData=null,interval=0,displayMode=localStorage.getItem('canDiagViewMode')==='raw'?'raw':'profile';
+function changeMode(mode){displayMode=mode;localStorage.setItem('canDiagViewMode',mode);$('profileMode').classList.toggle('active',mode==='profile');$('rawMode').classList.toggle('active',mode==='raw');$('widgets').style.display=mode==='profile'?'grid':'none';$('rawRows').style.display=mode==='raw'?'block':'none';if(lastData)draw(lastData)}
+$('profileMode').onclick=()=>changeMode('profile');$('rawMode').onclick=()=>changeMode('raw');
 function get(key){try{return JSON.parse(localStorage.getItem(key)||'null')}catch{return null}}
 function put(key,val){localStorage.setItem(key,JSON.stringify(val))}
 function status(t,level=''){$('status').textContent=t;$('status').className='tag '+level}
 function clear(){localStorage.removeItem(STORE);localStorage.removeItem(PENDING);paired=null;pending=null;lastData=null;lastAt=0}
-function showPair(){ $('pair').classList.add('on');$('widgets').replaceChildren();$('pairedControls').style.display='none';$('title').textContent='CAN DIAGNOSTIC';}
+function showPair(){ $('pair').classList.add('on');$('widgets').replaceChildren();$('pairedControls').style.display='none';$('modebar').style.display='none';$('title').textContent='CAN DIAGNOSTIC';}
 async function startPair(){if(busy)return;busy=true;showPair();status('Pairing');$('message').textContent='Requesting pairing code';
  try{const r=await fetch(API+'/api/pair/start',{method:'POST',headers:{'Content-Type':'application/json'},body:'{}',cache:'no-store'});const j=await r.json();if(!r.ok)throw Error(j.error||'HTTP '+r.status);pending=j;put(PENDING,j);$('pairCode').textContent=j.code;$('message').textContent='Enter this code on the laptop';}catch(e){status('Offline','warn');$('message').textContent='Pairing unavailable: '+e.message;$('pairCode').textContent='------'}finally{busy=false}}
 async function checkPair(){if(!pending||busy)return;if(Date.now()>=pending.expiresAt){pending=null;localStorage.removeItem(PENDING);startPair();return}busy=true;
  try{const r=await fetch(API+'/api/pair/check',{method:'POST',headers:{'Content-Type':'application/json','X-Pair-Secret':pending.secret},body:JSON.stringify({id:pending.id}),cache:'no-store'});const j=await r.json();if(!r.ok)throw Error(j.error||'HTTP '+r.status);
- if(j.status==='paired'){paired={token:j.token,device:j.device,expiresAt:j.expiresAt};put(STORE,paired);localStorage.removeItem(PENDING);pending=null;$('pair').classList.remove('on');$('pairedControls').style.display='flex';status('Connected');$('message').textContent='Paired with '+paired.device;}
+ if(j.status==='paired'){paired={token:j.token,device:j.device,expiresAt:j.expiresAt};put(STORE,paired);localStorage.removeItem(PENDING);pending=null;$('pair').classList.remove('on');$('pairedControls').style.display='flex';$('modebar').style.display='flex';status('Connected');$('message').textContent='Paired with '+paired.device;}
  else{$('expiry').textContent='Expires in '+Math.max(0,Math.ceil((pending.expiresAt-Date.now())/1000))+' seconds';}}
  catch(e){if(/expired|used/i.test(e.message)){pending=null;localStorage.removeItem(PENDING);startPair()}else $('message').textContent='Waiting for approval: '+e.message}
  finally{busy=false}}
-function draw(d){$('title').textContent=(d.profile||'CAN DIAGNOSTIC').slice(0,28);$('bus').textContent=d.bitrate+' kbps';$('widgets').replaceChildren();
+function drawRaw(d){const area=$('rawRows');area.replaceChildren();if(!Array.isArray(d.raw)||!d.raw.length){const e=document.createElement('div');e.className='note';e.textContent='No raw IDs selected. In the ESP32 app open Meta Glasses → Raw CAN selection and add up to eight CAN IDs.';area.append(e);return}
+for(const f of d.raw){const row=document.createElement('div');row.className='rawrow';if(f.ageMs==null||f.ageMs>3000)row.classList.add('rawstale');const id=document.createElement('div');id.className='rawid';id.textContent=(f.ext?'EXT ':'STD ')+(f.id||'');const hex=document.createElement('div');hex.className='rawhex';hex.textContent=f.data||'No frames';const sub=document.createElement('div');sub.className='rawsub';sub.textContent=(f.dlc||0)+' bytes · '+(f.hz||0)+' Hz · '+(f.ageMs==null?'Stale':f.ageMs+' ms old');row.append(id,hex,sub);area.append(row)}}
+function draw(d){$('modebar').style.display='flex';$('title').textContent=(d.profile||'CAN DIAGNOSTIC').slice(0,28);$('bus').textContent=d.bitrate+' kbps';$('widgets').replaceChildren();drawRaw(d);if(displayMode==='raw'){$('widgets').style.display='none';$('rawRows').style.display='block'}else{$('widgets').style.display='grid';$('rawRows').style.display='none'}
  if(!d.widgets?.length){$('widgets').innerHTML='<div class="note">No signals selected. Sync a dashboard from Profiles on the ESP32 web interface.</div>';return}
  for(const w of d.widgets){const e=document.createElement('div');e.className='widget';const valid=typeof w.value==='number'&&Number.isFinite(w.value)&&w.ageMs!=null&&w.ageMs<=3000;if(!valid)e.classList.add('old');
  const n=document.createElement('div');n.className='name';n.textContent=w.name||'Signal';const v=document.createElement('div');v.className='value';v.textContent=valid?Number(w.value.toPrecision(6)).toLocaleString():'—';const u=document.createElement('div');u.className='unit';u.textContent=w.unit||'';e.append(n,v,u);$('widgets').append(e)}}
@@ -38,10 +43,12 @@ async function fetchLive(){if(!paired||busy)return;if(Date.now()>paired.expiresA
  if(!j.data){status('Waiting for ESP32','warn');$('message').textContent='Pairing works. No uploaded CAN readings yet.';return}
  if(j.receivedAt!==lastAt){lastAt=j.receivedAt;lastData=j.data;draw(j.data)}$('message').textContent='Cloudflare relay connected';updateAge();}
  catch(e){status('Connection error','warn');$('message').textContent=e.message}finally{busy=false}}
-function updateAge(){if(!lastAt){$('age').textContent='No fresh CAN data';return}const sec=Math.max(0,Math.floor((Date.now()-lastAt)/1000));$('age').textContent='Last update '+sec+'s ago';if(sec>5){status('Stale data','warn');for(const e of document.querySelectorAll('.widget .value'))e.textContent='—'}else status('● LIVE','live')}
+function updateAge(){if(!lastAt){$('age').textContent='No fresh CAN data';return}const sec=Math.max(0,Math.floor((Date.now()-lastAt)/1000));$('age').textContent='Last update '+sec+'s ago';if(sec>5){status('Stale data','warn');for(const e of document.querySelectorAll('.widget .value'))e.textContent='—';for(const e of document.querySelectorAll('.rawrow'))e.classList.add('rawstale')}else status('● LIVE','live')}
 $('retry').onclick=()=>{pending=null;localStorage.removeItem(PENDING);startPair()};$('unpair').onclick=()=>{if(confirm('Forget pairing on these glasses?')){clear();startPair()}};
-paired=get(STORE);pending=get(PENDING);if(paired){$('pairedControls').style.display='flex';status('Connecting');$('message').textContent='Restoring saved pairing';fetchLive()}else if(pending&&pending.expiresAt>Date.now()){$('pairCode').textContent=pending.code;showPair();status('Pairing');$('message').textContent='Enter this code on your laptop'}else startPair();
+paired=get(STORE);pending=get(PENDING);if(paired){$('pairedControls').style.display='flex';$('modebar').style.display='flex';status('Connecting');$('message').textContent='Restoring saved pairing';fetchLive()}else if(pending&&pending.expiresAt>Date.now()){$('pairCode').textContent=pending.code;showPair();status('Pairing');$('message').textContent='Enter this code on your laptop'}else startPair();
+changeMode(displayMode);
 setInterval(()=>{if(document.visibilityState==='hidden')return;if(paired)fetchLive();else if(pending)checkPair();},1000);setInterval(updateAge,1000);
 </script></body></html>
+
 
 
