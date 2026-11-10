@@ -41,7 +41,7 @@ async function fetchLive(){if(!paired||busy)return;if(Date.now()>paired.expiresA
 function updateAge(){if(!lastAt){$('age').textContent='No fresh CAN data';return}const sec=Math.max(0,Math.floor((Date.now()-lastAt)/1000));$('age').textContent='Last update '+sec+'s ago';if(sec>5){status('Stale data','warn');for(const e of document.querySelectorAll('.widget .value'))e.textContent='—'}else status('● LIVE','live')}
 $('retry').onclick=()=>{pending=null;localStorage.removeItem(PENDING);startPair()};$('unpair').onclick=()=>{if(confirm('Forget pairing on these glasses?')){clear();startPair()}};
 paired=get(STORE);pending=get(PENDING);if(paired){$('pairedControls').style.display='flex';status('Connecting');$('message').textContent='Restoring saved pairing';fetchLive()}else if(pending&&pending.expiresAt>Date.now()){$('pairCode').textContent=pending.code;showPair();status('Pairing');$('message').textContent='Enter this code on your laptop'}else startPair();
-setInterval(()=>{if(document.visibilityState==='hidden')return;if(paired)fetchLive();else if(pending)checkPair();},3000);setInterval(updateAge,1000);
+setInterval(()=>{if(document.visibilityState==='hidden')return;if(paired)fetchLive();else if(pending)checkPair();},1000);setInterval(updateAge,1000);
 </script></body></html>
 
 
